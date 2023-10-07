@@ -18,7 +18,7 @@ from aiorocketchat.response import WebsocketResponse, BaseResponse, Channel
 pytestmark = pytest.mark.asyncio
 
 
-def test_connect_get_message():
+async def test_connect_get_message():
     expected = {
         "msg": "connect",
         "version": "1",
@@ -32,7 +32,7 @@ async def test_connect_parse_response(protocol_mock):
     protocol_mock.call_method.assert_called_once()
 
 
-def test_resume_get_message():
+async def test_resume_get_message():
     msg_id = "123"
     token = "sample_token"
     expected = {
@@ -49,7 +49,7 @@ async def test_resume_parse_response(protocol_mock):
     assert result == BaseResponse(id="123")
 
 
-def test_login_get_message():
+async def test_login_get_message():
     msg_id = "123"
     username = "user"
     password = "pass"
@@ -73,7 +73,7 @@ async def test_login_parse_response(protocol_mock):
     assert result == BaseResponse(id="123")
 
 
-def test_get_channels_get_message():
+async def test_get_channels_get_message():
     msg_id = "123"
     expected = {
         "msg": "method",
@@ -91,7 +91,7 @@ async def test_get_channels_call(protocol_mock):
     assert result == [Channel(id="123", type="channel")]
 
 
-def test_send_message():
+async def test_send_message():
     msg_id = "123"
     channel = "channel1"
     message = "Hello, World!"
@@ -110,7 +110,7 @@ async def test_send_message_parse_response(protocol_mock):
 
 
 # Test for SendReaction
-def test_send_reaction_get_message():
+async def test_send_reaction_get_message():
     msg_id = "123"
     emoji = ":smile:"
     message_id = "456"
@@ -128,7 +128,7 @@ async def test_send_reaction_parse_response(protocol_mock):
     assert result == BaseResponse(id="123")
 
 
-def test_send_typing_event_get_message():
+async def test_send_typing_event_get_message():
     msg_id = "123"
     channel_id = "channel1"
     username = "user1"
@@ -144,13 +144,13 @@ def test_send_typing_event_get_message():
     )
 
 
-def test_send_typing_event_parse_response():
+async def test_send_typing_event_parse_response():
     response_content = {"result": {"id": "123"}}
     result = SendTypingEvent.parse_response(WebsocketResponse(response_content))
     assert result == BaseResponse(id="123")
 
 
-def test_subscribe_to_channel_messages_get_message():
+async def test_subscribe_to_channel_messages_get_message():
     msg_id = "123"
     channel_id = "channel1"
     expected = {
@@ -162,7 +162,7 @@ def test_subscribe_to_channel_messages_get_message():
     assert SubscribeToChannelMessages.get_message(msg_id, channel_id) == expected
 
 
-def test_subscribe_to_channel_messages_parse_response():
+async def test_subscribe_to_channel_messages_parse_response():
     response_content = {
         "fields": {
             "args": [
@@ -185,7 +185,7 @@ def test_subscribe_to_channel_messages_parse_response():
     )
 
 
-def test_subscribe_to_channel_changes_get_message():
+async def test_subscribe_to_channel_changes_get_message():
     msg_id = "123"
     user_id = "user1"
     expected = {
@@ -197,7 +197,7 @@ def test_subscribe_to_channel_changes_get_message():
     assert SubscribeToChannelChanges.get_message(msg_id, user_id) == expected
 
 
-def test_subscribe_to_channel_changes_parse_response_added():
+async def test_subscribe_to_channel_changes_parse_response_added():
     response_content = {
         "fields": {"args": ["added", {"_id": "channel1", "t": "channel"}]}
     }
@@ -207,7 +207,7 @@ def test_subscribe_to_channel_changes_parse_response_added():
     callback_mock.assert_called_once_with("channel1", "channel")
 
 
-def test_subscribe_to_channel_changes_parse_response_removed():
+async def test_subscribe_to_channel_changes_parse_response_removed():
     response_content = {
         "fields": {"args": ["removed", {"_id": "channel1", "t": "channel"}]}
     }
@@ -217,7 +217,7 @@ def test_subscribe_to_channel_changes_parse_response_removed():
     callback_mock.assert_not_called()
 
 
-def test_unsubscribe_get_message():
+async def test_unsubscribe_get_message():
     subscription_id = "sub123"
     expected = {
         "msg": "unsub",
@@ -226,6 +226,6 @@ def test_unsubscribe_get_message():
     assert Unsubscribe.get_message(subscription_id) == expected
 
 
-def test_unsubscribe_get_response():
+async def test_unsubscribe_get_response():
     response = Unsubscribe.parse_response(WebsocketResponse({"result": {"id": "123"}}))
     assert response == BaseResponse(id="123")
