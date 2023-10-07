@@ -1,8 +1,10 @@
 import hashlib
 import time
 from abc import ABC, abstractmethod
+from typing import Any
 
-from aiorocketchat.protocol import Protocol, Response
+from aiorocketchat.protocol import Protocol
+from aiorocketchat.response import WebsocketResponse, ObjectResponse, Channel
 
 
 class RealtimeRequest(ABC):
@@ -15,7 +17,7 @@ class RealtimeRequest(ABC):
 
     @classmethod
     @abstractmethod
-    def parse_response(cls, response: Response):
+    def parse_response(cls, response: WebsocketResponse):
         ...
 
     @classmethod
@@ -36,7 +38,7 @@ class Connect(RealtimeRequest):
         }
 
     @classmethod
-    async def call(cls, protocol: Protocol) -> Response:
+    async def call(cls, protocol: Protocol) -> WebsocketResponse:
         return await protocol.call_method(cls.get_message())
 
 
@@ -57,11 +59,11 @@ class Resume(RealtimeRequest):
         }
 
     @classmethod
-    def parse_response(cls, response: Response):
-        return response.get_field("result", "id")
+    def parse_response(cls, response: WebsocketResponse) -> Any:
+        return ObjectResponse(id=response.get_field("result", "id"))
 
     @classmethod
-    async def call(cls, protocol: Protocol, token):
+    async def call(cls, protocol: Protocol, token) -> ObjectResponse:
         msg_id = cls.inc_sequence()
         msg = cls.get_message(msg_id, token)
         response = await protocol.call_method(msg, msg_id)
@@ -87,7 +89,7 @@ class Login(RealtimeRequest):
         }
 
     @classmethod
-    def parse_response(cls, response: Response):
+    def parse_response(cls, response: WebsocketResponse):
         return response.get_field("result", "id")
 
     @classmethod
@@ -111,9 +113,9 @@ class GetChannels(RealtimeRequest):
         }
 
     @classmethod
-    def parse_response(cls, response: Response):
+    def parse_response(cls, response: WebsocketResponse):
         # Return channel IDs and channel types.
-        return [(r["_id"], r["t"]) for r in response.content["result"]]
+        return [Channel(id=r["_id"], type=r["t"]) for r in response.content["result"]]
 
     @classmethod
     async def call(cls, protocol: Protocol):

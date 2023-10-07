@@ -13,7 +13,7 @@ from aiorocketchat.methods import (
     SubscribeToChannelChanges,
     Unsubscribe,
 )
-from aiorocketchat.protocol import Response
+from aiorocketchat.response import WebsocketResponse, ObjectResponse, Channel
 
 pytestmark = pytest.mark.asyncio
 
@@ -45,8 +45,8 @@ def test_resume_get_message():
 
 
 async def test_resume_call(protocol_mock):
-    result = Resume.parse_response(Response({"result": {"id": "123"}}))
-    assert result == "123"
+    result = Resume.parse_response(WebsocketResponse({"result": {"id": "123"}}))
+    assert result == ObjectResponse(id="123")
 
 
 def test_login_get_message():
@@ -69,9 +69,7 @@ def test_login_get_message():
 
 
 async def test_login_call(protocol_mock):
-    username = "my_user"
-    password = "my_password"
-    result = Login.parse_response(Response({"result": {"id": "123"}}))
+    result = Login.parse_response(WebsocketResponse({"result": {"id": "123"}}))
     assert result == "123"
 
 
@@ -88,5 +86,6 @@ def test_get_channels_get_message():
 
 async def test_get_channels_call(protocol_mock):
     result = GetChannels.parse_response(
-        Response({"result": [{"_id": "123", "t": "channel"}]})
+        WebsocketResponse({"result": [{"_id": "123", "t": "channel"}]})
     )
+    assert result == [Channel(id="123", type="channel")]
