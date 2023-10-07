@@ -92,8 +92,9 @@ class RocketChat:
 
     async def send_typing_event(self, channel_id, is_typing):
         """Send the `typing` event to a channel."""
-        await SendTypingEvent.call(self._dispatcher, channel_id, self.username,
-                                   is_typing)
+        await SendTypingEvent.call(
+            self._dispatcher, channel_id, self.username, is_typing
+        )
 
     async def subscribe_to_channel_messages(self, channel_id, callback):
         """
@@ -102,8 +103,9 @@ class RocketChat:
         Returns the subscription ID.
 
         """
-        sub_id = await SubscribeToChannelMessages.call(self._dispatcher,
-                                                       channel_id, callback)
+        sub_id = await SubscribeToChannelMessages.call(
+            self._dispatcher, channel_id, callback
+        )
         return sub_id
 
     async def subscribe_to_channel_changes(self, callback):
@@ -113,8 +115,9 @@ class RocketChat:
         Returns the subscription ID.
 
         """
-        sub_id = await SubscribeToChannelChanges.call(self._dispatcher,
-                                                      self.user_id, callback)
+        sub_id = await SubscribeToChannelChanges.call(
+            self._dispatcher, self.user_id, callback
+        )
         return sub_id
 
     async def unsubscribe(self, subscription_id):
