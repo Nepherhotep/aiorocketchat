@@ -3,6 +3,10 @@ import time
 from abc import ABC, abstractmethod
 from typing import Any
 
+from aiorocketchat.exceptions import RocketChatBaseException, RocketConnectError, \
+    RocketResumeError, RocketLoginError, RocketSendMessageError, RocketGetChannelsError, \
+    RocketSendReactionError, RocketSendTypingEventError, RocketSubscribeToChannelMessagesError, \
+    RocketSubscribeToChannelChangesError, RocketUnsubscribeError
 from aiorocketchat.transport import Transport
 from aiorocketchat.response import WebsocketResponse, BaseResponse, Channel
 
@@ -27,6 +31,8 @@ class BaseRealtimeRequestAbstract(ABC):
 
 
 class BaseRealtimeRequest(BaseRealtimeRequestAbstract, ABC):
+    exception_class = RocketChatBaseException
+
     @classmethod
     def parse_response(cls, response: WebsocketResponse) -> Any:
         return BaseResponse(id=response.get_field("result", "id"))
@@ -36,11 +42,18 @@ class BaseRealtimeRequest(BaseRealtimeRequestAbstract, ABC):
         msg_id = cls.inc_sequence()
         msg = cls.get_message(msg_id, *args)
         response = await transport.call_method(msg, msg_id)
+        cls.raise_exceptions(response)
         return cls.parse_response(response)
+
+    @classmethod
+    def raise_exceptions(cls, response: WebsocketResponse):
+        error = response.get_field("error")
+        if error:
+            raise Exception(error)
 
 
 class Connect(BaseRealtimeRequest):
-    """Initialize the connection."""
+    exception_class = RocketConnectError
 
     @classmethod
     def get_message(cls, *args, **kwargs):
@@ -61,6 +74,7 @@ class Connect(BaseRealtimeRequest):
 
 class Resume(BaseRealtimeRequest):
     """Log in to the service with a token."""
+    exception_class = RocketResumeError
 
     @classmethod
     def get_message(cls, msg_id, token):
@@ -78,6 +92,7 @@ class Resume(BaseRealtimeRequest):
 
 class Login(BaseRealtimeRequest):
     """Log in to the service."""
+    exception_class = RocketLoginError
 
     @classmethod
     def get_message(cls, msg_id, username, password):
@@ -97,6 +112,8 @@ class Login(BaseRealtimeRequest):
 
 class GetChannels(BaseRealtimeRequest):
     """Get a list of channels user is currently member of."""
+
+    exception_class = RocketGetChannelsError
 
     @classmethod
     def get_message(cls, msg_id):
@@ -122,6 +139,8 @@ class GetChannels(BaseRealtimeRequest):
 
 class SendMessage(BaseRealtimeRequest):
     """Send a text message to a channel."""
+
+    exception_class = RocketSendMessageError
 
     @classmethod
     def get_message(cls, msg_id, channel_id, msg_text, thread_id=None):
@@ -152,6 +171,8 @@ class SendMessage(BaseRealtimeRequest):
 class SendReaction(BaseRealtimeRequest):
     """Send a reaction to a specific message."""
 
+    exception_class = RocketSendReactionError
+
     @classmethod
     def get_message(cls, msg_id, orig_msg_id, emoji):
         return {
@@ -174,6 +195,8 @@ class SendReaction(BaseRealtimeRequest):
 class SendTypingEvent(BaseRealtimeRequest):
     """Send the `typing` event to a channel."""
 
+    exception_class = RocketSendTypingEventError
+
     @classmethod
     def get_message(cls, msg_id, channel_id, username, is_typing):
         return {
@@ -192,6 +215,8 @@ class SendTypingEvent(BaseRealtimeRequest):
 
 class SubscribeToChannelMessages(BaseRealtimeRequest):
     """Subscribe to all messages in the given channel."""
+
+    exception_class = RocketSubscribeToChannelMessagesError
 
     @classmethod
     def get_message(cls, msg_id, channel_id):
@@ -230,6 +255,8 @@ class SubscribeToChannelMessages(BaseRealtimeRequest):
 class SubscribeToChannelChanges(BaseRealtimeRequest):
     """Subscribe to all changes in channels."""
 
+    exception_class = RocketSubscribeToChannelChangesError
+
     @classmethod
     def get_message(cls, msg_id, user_id):
         return {
@@ -264,6 +291,8 @@ class SubscribeToChannelChanges(BaseRealtimeRequest):
 
 class Unsubscribe(BaseRealtimeRequest):
     """Cancel a subscription"""
+
+    exception_class = RocketUnsubscribeError
 
     @classmethod
     def get_message(cls, subscription_id):
