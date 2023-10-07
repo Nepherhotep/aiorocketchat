@@ -95,7 +95,7 @@ class RocketChat:
 
     async def get_channels(self):
         """Get a list of channels user is currently member of."""
-        return await GetChannels.call(self.protocol)
+        return await GetChannels(self.protocol).call()
 
     async def send_message(self, text, channel_id, thread_id=None):
         """Send a text message to a channel."""

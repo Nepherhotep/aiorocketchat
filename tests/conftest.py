@@ -9,5 +9,5 @@ class AsyncMock(MagicMock):
 
 
 @pytest.fixture
-def protocol_mock():
+def mock_transport():
     return AsyncMock()
