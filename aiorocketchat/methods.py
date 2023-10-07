@@ -4,10 +4,10 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from aiorocketchat.protocol import Protocol
-from aiorocketchat.response import WebsocketResponse, ObjectResponse, Channel
+from aiorocketchat.response import WebsocketResponse, BaseResponse, Channel
 
 
-class RealtimeRequest(ABC):
+class BaseRealtimeRequestAbstract(ABC):
     sequence_counter = 0
 
     @classmethod
@@ -26,7 +26,20 @@ class RealtimeRequest(ABC):
         ...
 
 
-class Connect(RealtimeRequest):
+class BaseRealtimeRequest(BaseRealtimeRequestAbstract, ABC):
+    @classmethod
+    def parse_response(cls, response: WebsocketResponse) -> Any:
+        return BaseResponse(id=response.get_field("result", "id"))
+
+    @classmethod
+    async def call(cls, protocol: Protocol, *args) -> BaseResponse:
+        msg_id = cls.inc_sequence()
+        msg = cls.get_message(msg_id, *args)
+        response = await protocol.call_method(msg, msg_id)
+        return cls.parse_response(response)
+
+
+class Connect(BaseRealtimeRequest):
     """Initialize the connection."""
 
     @classmethod
@@ -41,8 +54,12 @@ class Connect(RealtimeRequest):
     async def call(cls, protocol: Protocol) -> WebsocketResponse:
         return await protocol.call_method(cls.get_message())
 
+    @classmethod
+    async def parse_response(cls, response: WebsocketResponse) -> Any:
+        ...
 
-class Resume(RealtimeRequest):
+
+class Resume(BaseRealtimeRequest):
     """Log in to the service with a token."""
 
     @classmethod
@@ -58,19 +75,8 @@ class Resume(RealtimeRequest):
             ],
         }
 
-    @classmethod
-    def parse_response(cls, response: WebsocketResponse) -> Any:
-        return ObjectResponse(id=response.get_field("result", "id"))
 
-    @classmethod
-    async def call(cls, protocol: Protocol, token) -> ObjectResponse:
-        msg_id = cls.inc_sequence()
-        msg = cls.get_message(msg_id, token)
-        response = await protocol.call_method(msg, msg_id)
-        return cls.parse_response(response)
-
-
-class Login(RealtimeRequest):
+class Login(BaseRealtimeRequest):
     """Log in to the service."""
 
     @classmethod
@@ -88,19 +94,8 @@ class Login(RealtimeRequest):
             ],
         }
 
-    @classmethod
-    def parse_response(cls, response: WebsocketResponse):
-        return response.get_field("result", "id")
 
-    @classmethod
-    async def call(cls, protocol: Protocol, username, password):
-        msg_id = cls.inc_sequence()
-        msg = cls.get_message(msg_id, username, password)
-        response = await protocol.call_method(msg, msg_id)
-        return cls.parse_response(response)
-
-
-class GetChannels(RealtimeRequest):
+class GetChannels(BaseRealtimeRequest):
     """Get a list of channels user is currently member of."""
 
     @classmethod
@@ -125,7 +120,7 @@ class GetChannels(RealtimeRequest):
         return cls.parse_response(response)
 
 
-class SendMessage(RealtimeRequest):
+class SendMessage(BaseRealtimeRequest):
     """Send a text message to a channel."""
 
     @classmethod
@@ -154,7 +149,7 @@ class SendMessage(RealtimeRequest):
         await protocol.call_method(msg, msg_id)
 
 
-class SendReaction(RealtimeRequest):
+class SendReaction(BaseRealtimeRequest):
     """Send a reaction to a specific message."""
 
     @classmethod
@@ -176,7 +171,7 @@ class SendReaction(RealtimeRequest):
         await protocol.call_method(msg)
 
 
-class SendTypingEvent(RealtimeRequest):
+class SendTypingEvent(BaseRealtimeRequest):
     """Send the `typing` event to a channel."""
 
     @classmethod
@@ -195,7 +190,7 @@ class SendTypingEvent(RealtimeRequest):
         await protocol.call_method(msg, msg_id)
 
 
-class SubscribeToChannelMessages(RealtimeRequest):
+class SubscribeToChannelMessages(BaseRealtimeRequest):
     """Subscribe to all messages in the given channel."""
 
     @classmethod
@@ -227,10 +222,12 @@ class SubscribeToChannelMessages(RealtimeRequest):
         msg_id = cls.inc_sequence()
         msg = cls.get_message(msg_id, channel_id)
         await protocol.create_subscription(msg, msg_id, cls._wrap(callback))
-        return msg_id  # Return the ID to allow for later unsubscription.
+        return BaseResponse(
+            id=msg_id
+        )  # Return the ID to allow for later unsubscription.
 
 
-class SubscribeToChannelChanges(RealtimeRequest):
+class SubscribeToChannelChanges(BaseRealtimeRequest):
     """Subscribe to all changes in channels."""
 
     @classmethod
@@ -260,10 +257,12 @@ class SubscribeToChannelChanges(RealtimeRequest):
         msg_id = cls.inc_sequence()
         msg = cls.get_message(msg_id, user_id)
         await protocol.create_subscription(msg, msg_id, cls._wrap(callback))
-        return msg_id  # Return the ID to allow for later unsubscription.
+        return BaseResponse(
+            id=msg_id
+        )  # Return the ID to allow for later unsubscription.
 
 
-class Unsubscribe(RealtimeRequest):
+class Unsubscribe(BaseRealtimeRequest):
     """Cancel a subscription"""
 
     @classmethod
@@ -276,4 +275,4 @@ class Unsubscribe(RealtimeRequest):
     @classmethod
     async def call(cls, protocol: Protocol, subscription_id):
         msg = cls.get_message(subscription_id)
-        await protocol.call_method(msg)
+        return await protocol.call_method(msg)

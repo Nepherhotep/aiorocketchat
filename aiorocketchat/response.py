@@ -14,5 +14,5 @@ class WebsocketResponse:
 
 
 # a common response, where the object with id is returned
-ObjectResponse = namedtuple("ObjectResponse", ["id"])
+BaseResponse = namedtuple("BaseResponse", ["id"])
 Channel = namedtuple("Channel", ["id", "type"])
