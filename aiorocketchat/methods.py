@@ -3,7 +3,7 @@ import time
 from abc import ABC, abstractmethod
 from typing import Any
 
-from aiorocketchat.protocol import Protocol
+from aiorocketchat.transport import Transport
 from aiorocketchat.response import WebsocketResponse, BaseResponse, Channel
 
 
@@ -32,10 +32,10 @@ class BaseRealtimeRequest(BaseRealtimeRequestAbstract, ABC):
         return BaseResponse(id=response.get_field("result", "id"))
 
     @classmethod
-    async def call(cls, protocol: Protocol, *args) -> BaseResponse:
+    async def call(cls, transport: Transport, *args) -> BaseResponse:
         msg_id = cls.inc_sequence()
         msg = cls.get_message(msg_id, *args)
-        response = await protocol.call_method(msg, msg_id)
+        response = await transport.call_method(msg, msg_id)
         return cls.parse_response(response)
 
 
@@ -51,8 +51,8 @@ class Connect(BaseRealtimeRequest):
         }
 
     @classmethod
-    async def call(cls, protocol: Protocol) -> WebsocketResponse:
-        return await protocol.call_method(cls.get_message())
+    async def call(cls, transport: Transport) -> WebsocketResponse:
+        return await transport.call_method(cls.get_message())
 
     @classmethod
     async def parse_response(cls, response: WebsocketResponse) -> Any:
@@ -113,10 +113,10 @@ class GetChannels(BaseRealtimeRequest):
         return [Channel(id=r["_id"], type=r["t"]) for r in response.content["result"]]
 
     @classmethod
-    async def call(cls, protocol: Protocol):
+    async def call(cls, transport: Transport):
         msg_id = cls.inc_sequence()
         msg = cls.get_message(msg_id)
-        response = await protocol.call_method(msg, msg_id)
+        response = await transport.call_method(msg, msg_id)
         return cls.parse_response(response)
 
 
@@ -143,10 +143,10 @@ class SendMessage(BaseRealtimeRequest):
         return msg
 
     @classmethod
-    async def call(cls, protocol: Protocol, msg_text, channel_id, thread_id=None):
+    async def call(cls, transport: Transport, msg_text, channel_id, thread_id=None):
         msg_id = cls.inc_sequence()
         msg = cls.get_message(msg_id, channel_id, msg_text, thread_id)
-        await protocol.call_method(msg, msg_id)
+        await transport.call_method(msg, msg_id)
 
 
 class SendReaction(BaseRealtimeRequest):
@@ -165,10 +165,10 @@ class SendReaction(BaseRealtimeRequest):
         }
 
     @classmethod
-    async def call(cls, protocol: Protocol, orig_msg_id, emoji):
+    async def call(cls, transport: Transport, orig_msg_id, emoji):
         msg_id = cls.inc_sequence()
         msg = cls.get_message(msg_id, orig_msg_id, emoji)
-        await protocol.call_method(msg)
+        await transport.call_method(msg)
 
 
 class SendTypingEvent(BaseRealtimeRequest):
@@ -184,10 +184,10 @@ class SendTypingEvent(BaseRealtimeRequest):
         }
 
     @classmethod
-    async def call(cls, protocol: Protocol, channel_id, username, is_typing):
+    async def call(cls, transport: Transport, channel_id, username, is_typing):
         msg_id = cls.inc_sequence()
         msg = cls.get_message(msg_id, channel_id, username, is_typing)
-        await protocol.call_method(msg, msg_id)
+        await transport.call_method(msg, msg_id)
 
 
 class SubscribeToChannelMessages(BaseRealtimeRequest):
@@ -217,11 +217,11 @@ class SubscribeToChannelMessages(BaseRealtimeRequest):
         return fn
 
     @classmethod
-    async def call(cls, protocol: Protocol, channel_id, callback):
+    async def call(cls, transport: Transport, channel_id, callback):
         # TODO: document the expected interface of the callback.
         msg_id = cls.inc_sequence()
         msg = cls.get_message(msg_id, channel_id)
-        await protocol.create_subscription(msg, msg_id, cls._wrap(callback))
+        await transport.create_subscription(msg, msg_id, cls._wrap(callback))
         return BaseResponse(
             id=msg_id
         )  # Return the ID to allow for later unsubscription.
@@ -252,11 +252,11 @@ class SubscribeToChannelChanges(BaseRealtimeRequest):
         return fn
 
     @classmethod
-    async def call(cls, protocol: Protocol, user_id, callback):
+    async def call(cls, transport: Transport, user_id, callback):
         # TODO: document the expected interface of the callback.
         msg_id = cls.inc_sequence()
         msg = cls.get_message(msg_id, user_id)
-        await protocol.create_subscription(msg, msg_id, cls._wrap(callback))
+        await transport.create_subscription(msg, msg_id, cls._wrap(callback))
         return BaseResponse(
             id=msg_id
         )  # Return the ID to allow for later unsubscription.
@@ -273,6 +273,6 @@ class Unsubscribe(BaseRealtimeRequest):
         }
 
     @classmethod
-    async def call(cls, protocol: Protocol, subscription_id):
+    async def call(cls, transport: Transport, subscription_id):
         msg = cls.get_message(subscription_id)
-        return await protocol.call_method(msg)
+        return await transport.call_method(msg)
