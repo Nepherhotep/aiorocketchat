@@ -70,10 +70,7 @@ class Connect(BaseRealtimeRequest):
         }
 
     async def call(self) -> WebsocketResponse:
-        return await self.transport.call_method(self.get_message())
-
-    async def parse_response(self, response: WebsocketResponse) -> Any:
-        ...
+        await self.transport.call_method(self.get_message())
 
 
 class Resume(BaseRealtimeRequest):
