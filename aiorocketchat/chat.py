@@ -44,7 +44,7 @@ class RocketChat:
 
         # Connect and login.
         await self._connect()
-        self.user_id = await self._login(username, password)
+        self.user_id = (await self._login(username, password)).id
         self.username = username
 
     async def resume(self, address, username, token):
@@ -61,7 +61,7 @@ class RocketChat:
 
         # Connect and login.
         await self._connect()
-        self.user_id = await self._resume(token)
+        self.user_id = (await self._resume(token)).id
         self.username = username
 
     async def run_forever(self):
@@ -78,6 +78,7 @@ class RocketChat:
                 connected_fut.set_result(True)
                 # Finally, create the ever-running dispatcher loop.
                 await self.dispatch_task
+
         except Exception as e:
             if not connected_fut.done():
                 connected_fut.set_exception(e)

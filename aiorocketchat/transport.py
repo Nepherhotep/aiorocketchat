@@ -2,11 +2,13 @@ import asyncio
 import json
 from typing import Any
 
+from aiorocketchat.response import TransportResponse
+
 
 class Transport:
     """Match websockets calls with responses and manage callbacks."""
 
-    def __init__(self, verbose=False):
+    def __init__(self, verbose=True):
         self._websocket: Any = None
         self._futures = {}  # ID -> asyncio Future (resolved with the response)
         self._verbose = verbose
@@ -22,14 +24,14 @@ class Transport:
 
     async def call_method(self, msg, msg_id=None):
         if self._verbose:
-            print(f"Outgoing: {msg}")
+            print(f"Outgoing: {msg_id} {msg}")
         if msg_id is None:
-            await self._websocket.send(json.dumps(msg))
+            return TransportResponse(await self._websocket.send(json.dumps(msg)))
         else:
             fut = asyncio.get_event_loop().create_future()
             self._futures[msg_id] = fut
             await self._websocket.send(json.dumps(msg))
-            return await fut
+            return TransportResponse(await fut)
 
     async def create_subscription(self, msg, msg_id, callback):
         if self._verbose:
@@ -51,23 +53,29 @@ class Transport:
         msg = await self._websocket.recv()
         if self._verbose:
             print(f"Incoming: {msg}")
+
         parsed = json.loads(msg)
         if parsed["msg"] == "result":
             msg_id = parsed["id"]
             if msg_id in self._futures:
                 self._futures[msg_id].set_result(parsed)
                 del self._futures[msg_id]
+
         elif parsed["msg"] == "changed":  # Subscription update.
             stream_name = parsed["collection"]
             if stream_name in self._callbacks:
                 self._callbacks[stream_name](parsed)
+
         elif parsed["msg"] in ["ready", "connected", "added", "updated", "nosub"]:
             return  # Nothing to do.
+
         elif parsed["msg"] == "ping":
             asyncio.create_task(self.call_method({"msg": "pong"}))
+
         elif parsed["msg"] == "error":
             if self._verbose:
                 print(f"Remote error: {msg}")
+
         else:
             if self._verbose:
                 print(f"Unknown message: {msg}")

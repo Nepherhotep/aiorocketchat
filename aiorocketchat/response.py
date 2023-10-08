@@ -2,9 +2,9 @@ from collections import namedtuple
 from typing import Any
 
 
-class WebsocketResponse:
+class TransportResponse:
     def __init__(self, content: dict):
-        self.content = content
+        self.content = {} if content is None else content
 
     def get_field(self, *fields: str) -> Any:
         content = self.content

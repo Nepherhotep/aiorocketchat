@@ -17,7 +17,7 @@ from aiorocketchat.exceptions import (
     RocketUnsubscribeError,
 )
 from aiorocketchat.transport import Transport
-from aiorocketchat.response import WebsocketResponse, BaseResponse, Channel
+from aiorocketchat.response import TransportResponse, BaseResponse, Channel
 
 
 class BaseRealtimeRequestAbstract(ABC):
@@ -26,10 +26,10 @@ class BaseRealtimeRequestAbstract(ABC):
     @classmethod
     def inc_sequence(cls):
         cls.sequence_counter += 1
-        return cls.sequence_counter
+        return str(cls.sequence_counter)
 
     @abstractmethod
-    def parse_response(self, response: WebsocketResponse):
+    def parse_response(self, response: TransportResponse):
         ...
 
     @abstractmethod
@@ -43,7 +43,7 @@ class BaseRealtimeRequest(BaseRealtimeRequestAbstract, ABC):
     def __init__(self, transport: Transport):
         self.transport = transport
 
-    def parse_response(self, response: WebsocketResponse) -> Any:
+    def parse_response(self, response: TransportResponse) -> Any:
         return BaseResponse(id=response.get_field("result", "id"))
 
     async def call(self, *args) -> BaseResponse:
@@ -53,7 +53,7 @@ class BaseRealtimeRequest(BaseRealtimeRequestAbstract, ABC):
         self.raise_exceptions(response)
         return self.parse_response(response)
 
-    def raise_exceptions(self, response: WebsocketResponse):
+    def raise_exceptions(self, response: TransportResponse):
         error = response.get_field("error")
         if error:
             raise Exception(error)
@@ -69,7 +69,7 @@ class Connect(BaseRealtimeRequest):
             "support": ["1"],
         }
 
-    async def call(self) -> WebsocketResponse:
+    async def call(self) -> TransportResponse:
         await self.transport.call_method(self.get_message())
 
 
@@ -124,7 +124,7 @@ class GetChannels(BaseRealtimeRequest):
             "params": [],
         }
 
-    def parse_response(self, response: WebsocketResponse):
+    def parse_response(self, response: TransportResponse):
         # Return channel IDs and channel types.
         return [Channel(id=r["_id"], type=r["t"]) for r in response.content["result"]]
 

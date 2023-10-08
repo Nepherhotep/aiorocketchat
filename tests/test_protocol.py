@@ -1,11 +1,11 @@
 import pytest
 
-from aiorocketchat.response import WebsocketResponse
+from aiorocketchat.response import TransportResponse
 
 
 def test_response_initialization():
     content = {"name": "John", "age": 30}
-    response = WebsocketResponse(content)
+    response = TransportResponse(content)
     assert response.content == content
 
 
@@ -20,5 +20,5 @@ def test_response_initialization():
     ],
 )
 def test_get_nested_fields(content, fields, expected):
-    response = WebsocketResponse(content)
+    response = TransportResponse(content)
     assert response.get_field(*fields) == expected

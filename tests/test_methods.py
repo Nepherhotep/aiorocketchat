@@ -13,7 +13,7 @@ from aiorocketchat.methods import (
     SubscribeToChannelChanges,
     Unsubscribe,
 )
-from aiorocketchat.response import WebsocketResponse, BaseResponse, Channel
+from aiorocketchat.response import TransportResponse, BaseResponse, Channel
 
 pytestmark = pytest.mark.asyncio
 
@@ -46,7 +46,7 @@ async def test_resume_get_message(mock_transport):
 
 async def test_resume_parse_response(mock_transport):
     result = Resume(mock_transport).parse_response(
-        WebsocketResponse({"result": {"id": "123"}})
+        TransportResponse({"result": {"id": "123"}})
     )
     assert result == BaseResponse(id="123")
 
@@ -72,7 +72,7 @@ async def test_login_get_message(mock_transport):
 
 async def test_login_parse_response(mock_transport):
     result = Login(mock_transport).parse_response(
-        WebsocketResponse({"result": {"id": "123"}})
+        TransportResponse({"result": {"id": "123"}})
     )
     assert result == BaseResponse(id="123")
 
@@ -90,7 +90,7 @@ async def test_get_channels_get_message(mock_transport):
 
 async def test_get_channels_call(mock_transport):
     result = GetChannels(mock_transport).parse_response(
-        WebsocketResponse({"result": [{"_id": "123", "t": "channel"}]})
+        TransportResponse({"result": [{"_id": "123", "t": "channel"}]})
     )
     assert result == [Channel(id="123", type="channel")]
 
@@ -110,7 +110,7 @@ async def test_send_message(mock_transport):
 
 async def test_send_message_parse_response(mock_transport):
     result = SendMessage(mock_transport).parse_response(
-        WebsocketResponse({"result": {"id": "123"}})
+        TransportResponse({"result": {"id": "123"}})
     )
     assert result == BaseResponse(id="123")
 
@@ -133,7 +133,7 @@ async def test_send_reaction_get_message(mock_transport):
 
 async def test_send_reaction_parse_response(mock_transport):
     result = SendReaction(mock_transport).parse_response(
-        WebsocketResponse({"result": {"id": "123"}})
+        TransportResponse({"result": {"id": "123"}})
     )
     assert result == BaseResponse(id="123")
 
@@ -160,7 +160,7 @@ async def test_send_typing_event_get_message(mock_transport):
 async def test_send_typing_event_parse_response(mock_transport):
     response_content = {"result": {"id": "123"}}
     result = SendTypingEvent(mock_transport).parse_response(
-        WebsocketResponse(response_content)
+        TransportResponse(response_content)
     )
     assert result == BaseResponse(id="123")
 
@@ -249,6 +249,6 @@ async def test_unsubscribe_get_message(mock_transport):
 
 async def test_unsubscribe_get_response(mock_transport):
     response = Unsubscribe(mock_transport).parse_response(
-        WebsocketResponse({"result": {"id": "123"}})
+        TransportResponse({"result": {"id": "123"}})
     )
     assert response == BaseResponse(id="123")

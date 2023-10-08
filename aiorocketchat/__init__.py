@@ -1,1 +1,1 @@
-from .realtime_api import RocketChat
+from .chat import RocketChat
