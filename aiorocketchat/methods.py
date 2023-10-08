@@ -1,6 +1,7 @@
 import hashlib
 import time
 from abc import ABC, abstractmethod
+from pprint import pprint
 from typing import Any
 
 from aiorocketchat.exceptions import (
@@ -125,8 +126,14 @@ class GetChannels(BaseRealtimeRequest):
         }
 
     def parse_response(self, response: TransportResponse):
+        channels = []
+        for item in response.content.get("result", []):
+            if type(item) != dict:
+                print("item", item)
+            channels.append(Channel(id=item["_id"], type=item["t"]))
+
         # Return channel IDs and channel types.
-        return [Channel(id=r["_id"], type=r["t"]) for r in response.content["result"]]
+        return channels
 
     async def call(self):
         msg_id = self.inc_sequence()

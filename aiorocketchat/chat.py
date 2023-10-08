@@ -25,10 +25,10 @@ class RocketChat:
     class ConnectCallFailed(Exception):
         pass
 
-    def __init__(self):
+    def __init__(self, verbose=False):
         self.user_id = None
         self.username = None
-        self.transport = Transport()
+        self.transport = Transport(verbose)
 
     async def start(self, address, username, password):
         ws_connected = asyncio.get_event_loop().create_future()

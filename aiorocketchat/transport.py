@@ -22,7 +22,7 @@ class Transport:
         # if appropriate.
         return asyncio.create_task(self._process_incoming())
 
-    async def call_method(self, msg, msg_id=None):
+    async def call_method(self, msg, msg_id=None) -> TransportResponse:
         if self._verbose:
             print(f"Outgoing: {msg_id} {msg}")
         if msg_id is None:
@@ -33,11 +33,11 @@ class Transport:
             await self._websocket.send(json.dumps(msg))
             return TransportResponse(await fut)
 
-    async def create_subscription(self, msg, msg_id, callback):
+    async def create_subscription(self, msg, msg_id, callback) -> TransportResponse:
         if self._verbose:
             print(f"Outgoing: {msg}")
         self._callbacks[msg["name"]] = callback
-        await self._websocket.send(json.dumps(msg))
+        return TransportResponse(await self._websocket.send(json.dumps(msg)))
 
     async def _process_incoming(self):
         try:

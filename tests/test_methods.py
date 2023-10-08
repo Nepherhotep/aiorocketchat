@@ -90,9 +90,14 @@ async def test_get_channels_get_message(mock_transport):
 
 async def test_get_channels_call(mock_transport):
     result = GetChannels(mock_transport).parse_response(
-        TransportResponse({"result": [{"_id": "123", "t": "channel"}]})
+        TransportResponse(
+            {"result": [{"_id": "123", "t": "channel"}, {"_id": "222", "t": "channel"}]}
+        )
     )
-    assert result == [Channel(id="123", type="channel")]
+    assert result == [
+        Channel(id="123", type="channel"),
+        Channel(id="222", type="channel"),
+    ]
 
 
 async def test_send_message(mock_transport):
